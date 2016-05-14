@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>CMSC 161 Mini Project</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel=stylesheet href="css/base.css"/>
+</head>
+<body>
+
+	<div>
+		<audio controls loop preload="auto" autoplay>
+			<source src="audio/The_Beatles-Strawberry_Fields_Forever.mp3" type="audio/mpeg">
+			Your browser does not support the audio element.
+		</audio>
+	</div>
+
+	<script src="js/Three.js"></script>
+	<script src="js/Projector.js"></script>
+	<script src="js/CanvasRenderer.js"></script>
+	<script src="js/Detector.js"></script>
+	<script src="js/Stats.js"></script>
+	<script src="js/OrbitControls.js"></script>
+	<script src="js/THREEx.KeyboardState.js"></script>
+	<script src="js/THREEx.FullScreen.js"></script>
+	<script src="js/THREEx.WindowResize.js"></script>
+	<script src="js/Bird.js"></script>
+	<script src="js/Boid.js"></script>
+	<script src="js/stats.min.js"></script>
+
+	<!-- jQuery code to display an information button and box when clicked. -->
+	<script src="js/jquery-1.9.1.js"></script>
+	<script src="js/jquery-ui.js"></script>
+	<link rel=stylesheet href="css/jquery-ui.css" />
+	<link rel=stylesheet href="css/info.css"/>
+	<script src="js/info.js"></script>
+	
+	<div id="infoButton"></div>
+	<div id="infoBox" title="Demo Information">
+		Movement controls: <br/>
+		<ul>
+		<li>W/S: Translate Forward/Backward
+		<li>A/D: Rotate Left/Right
+		<li>Q/E: Translate Left/Right
+		<li>R/F: Rotate Up/Down
+		<li>Arrow keys: Translate (global directions)
+		<li>Z: Reset position and rotation.
+		</ul>
+	</div>
+	<!-- ------------------------------------------------------------ -->
+
+	<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+	
+	<script>
+	// MAIN
+
+	// standard global variables
+	var onRenderFcts= [];
+	var container, scene, camera, renderer, controls, stats;
+	var boid, boids, birds, bird, Bird;
+	var keyboard = new THREEx.KeyboardState();
+	var clock = new THREE.Clock();
+
+	// custom global variables
+	var MovingCube;
+
+	SCREEN_HEIGHT = window.innerHeight;
+	SCREEN_WIDTH = window.innerWidth
+	SCREEN_WIDTH_HALF = SCREEN_WIDTH  / 2,
+	SCREEN_HEIGHT_HALF = SCREEN_HEIGHT / 2;
+
+	init();
+	animate();
+
+	// FUNCTIONS 		
+	function init() 
+	{
+		// SCENE
+		scene = new THREE.Scene();
+		birds = [];
+		boids = [];
+
+		for ( var i = 0; i < 200; i ++ ) {
+
+			boid = boids[ i ] = new Boid();
+			boid.position.x = Math.random() * 400 - 200;
+			boid.position.y = Math.random() * 400 - 200;
+			boid.position.z = Math.random() * 400 - 200;
+			boid.velocity.x = Math.random() * 2 - 1;
+			boid.velocity.y = Math.random() * 2 - 1;
+			boid.velocity.z = Math.random() * 2 - 1;
+			boid.setAvoidWalls( true );
+			boid.setWorldSize( 500, 500, 400 );
+
+			bird = birds[ i ] = new THREE.Mesh( new Bird(), new THREE.MeshBasicMaterial( { color:Math.random() * 0xffffff, side: THREE.DoubleSide } ) );
+			bird.phase = Math.floor( Math.random() * 62.83 );
+			scene.add( bird );
+		}
+
+		// CAMERA
+		var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+		var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+		camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+		scene.add(camera);
+		camera.position.set(0,150,-500);
+		camera.lookAt(scene.position);	
+
+		// RENDERER
+		if ( Detector.webgl )
+			renderer = new THREE.WebGLRenderer( {antialias:true} );
+		else
+			renderer = new THREE.CanvasRenderer();
+
+		renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+		document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+		document.body.appendChild( renderer.domElement );
+		container = document.getElementById( 'ThreeJS' );
+		container.appendChild( renderer.domElement );
+
+	    renderer.shadowMapEnabled	= true;
+		renderer.shadowMapType 		= THREE.PCFSoftShadowMap;
+
+		// EVENTS
+		THREEx.WindowResize(renderer, camera);
+		THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+
+		// CONTROLS
+		controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+		// STATS
+		stats = new Stats();
+		stats.domElement.style.position = 'absolute';
+		stats.domElement.style.bottom = '0px';
+		stats.domElement.style.zIndex = 100;
+		// container.appendChild( stats.domElement );
+
+		// LIGHT
+	    var light	= new THREE.DirectionalLight( 0x4444cc, 2 );
+		light.position.set( 0, 10000, -10000 ).normalize();  
+		scene.add( light );
+
+	    //SHADOW
+	    var spotLight	= new THREE.SpotLight( 0xFFAA88 );
+		spotLight.position.set( 1500, 3000, 2500);          
+		spotLight.shadowCameraNear	= 0.01;		
+		spotLight.castShadow		= true;
+		spotLight.shadowDarkness	= 0.5;
+		//spotLight.shadowCameraVisible	= true;
+		//console.dir(spotLight)
+	    spotLight.shadowMapWidth	= 1024;
+	    spotLight.shadowMapHeight	= 1024;
+		scene.add( spotLight );	
+		
+		// FLOOR
+		var floorTexture = new THREE.ImageUtils.loadTexture( 'images/grass14.png' );
+		floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+		floorTexture.repeat.set( 10, 10 );
+		var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
+		var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+		var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+		floor.position.y = -0.5;
+		floor.rotation.x = Math.PI / 2;
+		///scene.add(floor);
+
+	    floor.castShadow	= false;
+		floor.receiveShadow	= true;
+		
+		// SKYBOX/FOG	
+		var imagePrefix = "images/dawnmountain-";
+		var directions  = ["xpos", "xneg", "ypos", "yneg", "zpos", "zneg"];
+		var imageSuffix = ".png";
+		
+		var materialArray = [];
+		for (var i = 0; i < 6; i++)
+			materialArray.push( new THREE.MeshBasicMaterial({
+				map: THREE.ImageUtils.loadTexture( imagePrefix + directions[i] + imageSuffix ),
+				side: THREE.BackSide
+			}));
+
+		var skyBoxMaterial = new THREE.MeshFaceMaterial( materialArray );
+
+		var fog_color = 0x9999ff; 
+		var alpha = 0.00025;
+		var skyBoxGeometry = new THREE.CubeGeometry( 2500, 2500, 2500 );
+		// var skyBoxMaterial = new THREE.MeshBasicMaterial( { map: fog_color, side: THREE.BackSide } );
+		var skyBox = new THREE.Mesh( skyBoxGeometry, skyBoxMaterial );
+		scene.add(skyBox);
+	    skyBox.castShadow	= false
+		skyBox.receiveShadow	= true;
+		// scene.fog = new THREE.FogExp2( fog_color, 0.0001 );
+		
+		////////////
+		// CUSTOM //
+		////////////
+		
+		// create an array with six textures for a cool cube
+		var materialArray = [];
+	    materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/front.png' ) }));
+		var MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
+		var MovingCubeGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
+		MovingCube.position.set(0, 30.1, 0);
+		scene.add( MovingCube );
+
+	    MovingCube.castShadow		= true;
+		MovingCube.receiveShadow	= false;	
+		
+	}
+
+	function onDocumentMouseMove( event ) {
+			var vector = new THREE.Vector3( event.clientX - SCREEN_WIDTH_HALF, - event.clientY + SCREEN_HEIGHT_HALF, 0 );
+			for ( var i = 0, il = boids.length; i < il; i++ ) {
+				boid = boids[ i ];
+				vector.z = boid.position.z;
+				boid.repulse( vector );
+			}
+		}
+
+	function animate() 
+	{
+	    requestAnimationFrame( animate );
+		render();
+		stats.end();		
+		update();
+	}
+
+	function update()
+	{
+		var delta = clock.getDelta(); // seconds.
+		var moveDistance = 200 * delta; // 200 pixels per second
+		var rotateAngle = Math.PI / 2 * delta;   // pi/2 radians (90 degrees) per second
+		
+		// local coordinates
+		// local transformations
+
+		// move forwards/backwards/left/right
+		if ( keyboard.pressed("W") )
+			MovingCube.translateZ( -moveDistance );
+		if ( keyboard.pressed("S") )
+			MovingCube.translateZ(  moveDistance );
+		if ( keyboard.pressed("Q") )
+			MovingCube.translateX( -moveDistance );
+		if ( keyboard.pressed("E") )
+			MovingCube.translateX(  moveDistance );	
+
+		// rotate left/right/up/down
+		var rotation_matrix = new THREE.Matrix4().identity();
+		if ( keyboard.pressed("A") )
+			MovingCube.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+		if ( keyboard.pressed("D") )
+			MovingCube.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+		if ( keyboard.pressed("R") )
+			MovingCube.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+		if ( keyboard.pressed("F") )
+			MovingCube.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+		
+		if ( keyboard.pressed("Z") )
+		{
+			MovingCube.position.set(0,30.1,0);
+			MovingCube.rotation.set(0,0,0);
+		}
+			
+		// global coordinates
+		if ( keyboard.pressed("left") )
+			MovingCube.position.x -= moveDistance;
+		if ( keyboard.pressed("right") )
+			MovingCube.position.x += moveDistance;
+		if ( keyboard.pressed("up") )
+			MovingCube.position.z -= moveDistance;
+		if ( keyboard.pressed("down") )
+			MovingCube.position.z += moveDistance;
+			
+		controls.update();
+		stats.update();
+	}
+
+	function render() 
+	{
+		for ( var i = 0, il = birds.length; i < il; i++ ) {
+			boid = boids[ i ];
+			boid.run( boids );
+
+			bird = birds[ i ];
+			bird.position.copy( boids[ i ].position );
+
+			color = bird.material.color;
+			color.r = color.g = color.b = ( 500 - bird.position.z ) / 1000;
+
+			bird.rotation.y = Math.atan2( - boid.velocity.z, boid.velocity.x );
+			bird.rotation.z = Math.asin( boid.velocity.y / boid.velocity.length() );
+
+			bird.phase = ( bird.phase + ( Math.max( 0, bird.rotation.z ) + 0.1 )  ) % 62.83;
+			bird.geometry.vertices[ 5 ].y = bird.geometry.vertices[ 4 ].y = Math.sin( bird.phase ) * 5;
+
+		}
+
+		// rotate the cube around its axes
+	    MovingCube.rotation.y += 0.02;
+	    MovingCube.castShadow = true;
+		MovingCube.receiveShadow = false;
+
+		renderer.render( scene, camera );
+		
+	}
+
+	</script>
+</body>
+</html>
