@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -142,14 +143,14 @@
 
 	    //SHADOW
 	    var spotLight	= new THREE.SpotLight( 0xFFAA88 );
-		spotLight.position.set( 1500, 3000, 2500);          
+		spotLight.position.set( 1000, 1800, 2500);          
 		spotLight.shadowCameraNear	= 0.01;		
 		spotLight.castShadow		= true;
 		spotLight.shadowDarkness	= 0.5;
 		//spotLight.shadowCameraVisible	= true;
 		//console.dir(spotLight)
-	    spotLight.shadowMapWidth	= 1024;
-	    spotLight.shadowMapHeight	= 1024;
+	  	spotLight.shadowMapWidth	= 1024;
+	    	spotLight.shadowMapHeight	= 1024;
 		scene.add( spotLight );	
 		
 		// FLOOR
@@ -163,7 +164,7 @@
 		floor.rotation.x = Math.PI / 2;
 		///scene.add(floor);
 
-	    floor.castShadow	= false;
+	    	floor.castShadow	= false;
 		floor.receiveShadow	= true;
 		
 		// SKYBOX/FOG	
@@ -186,9 +187,9 @@
 		// var skyBoxMaterial = new THREE.MeshBasicMaterial( { map: fog_color, side: THREE.BackSide } );
 		var skyBox = new THREE.Mesh( skyBoxGeometry, skyBoxMaterial );
 		scene.add(skyBox);
-	    skyBox.castShadow	= false
+	    	skyBox.castShadow	= false
 		skyBox.receiveShadow	= true;
-		// scene.fog = new THREE.FogExp2( fog_color, 0.0001 );
+		//scene.fog = new THREE.FogExp2( fog_color, 0.0001 );
 		
 		////////////
 		// CUSTOM //
@@ -208,7 +209,7 @@
 		MovingCube.position.set(0, 30.1, 0);
 		scene.add( MovingCube );
 
-	    MovingCube.castShadow		= true;
+	    	MovingCube.castShadow		= true;
 		MovingCube.receiveShadow	= false;	
 		
 	}
@@ -301,9 +302,7 @@
 		}
 
 		// rotate the cube around its axes
-	    MovingCube.rotation.y += 0.02;
-	    MovingCube.castShadow = true;
-		MovingCube.receiveShadow = false;
+	   	MovingCube.rotation.y += 0.02;
 
 		renderer.render( scene, camera );
 		
