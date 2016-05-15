@@ -80,8 +80,8 @@
 		scene = new THREE.Scene();
 		birds = [];
 		boids = [];
-		var z = 9000;
-		for ( var i = 0; i < 200; i ++ ) {
+		var z = 400;
+		for ( var i = 0; i < 500; i ++ ) {
 
 			boid = boids[ i ] = new Boid();
 			boid.position.x = Math.random() * z - (z/2);
@@ -91,7 +91,7 @@
 			boid.velocity.y = Math.random() * 2 - 1;
 			boid.velocity.z = Math.random() * 2 - 1;
 			boid.setAvoidWalls( true );
-			boid.setWorldSize( 10000, 1000, z );
+			boid.setWorldSize( 800, 800, z );
 
 			bird = birds[ i ] = new THREE.Mesh( new Bird(), new THREE.MeshBasicMaterial( { color:Math.random() * 0xffffff, side: THREE.DoubleSide } ) );
 			bird.phase = Math.floor( Math.random() * 62.83 );
