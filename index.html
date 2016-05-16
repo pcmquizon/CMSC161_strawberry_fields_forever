@@ -63,7 +63,7 @@
 	var clock = new THREE.Clock();
 
 	// custom global variables
-	var MovingCube;
+	var Strawberry1;
 
 	SCREEN_HEIGHT = window.innerHeight;
 	SCREEN_WIDTH = window.innerWidth
@@ -214,14 +214,49 @@
 		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/bot.png' ) }));
 		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/back.png' ) }));
 		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/front.png' ) }));
-		var MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
-		var MovingCubeGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
-		MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
-		MovingCube.position.set(0, 30.1, 0);
-		scene.add( MovingCube );
+		var Strawberry1Mat = new THREE.MeshFaceMaterial(materialArray);
+		var Strawberry1Geom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Strawberry1 = new THREE.Mesh( Strawberry1Geom, Strawberry1Mat );
+		Strawberry1.position.set(0, 30.1, 0);
+		scene.add( Strawberry1 );
 
-		MovingCube.castShadow = true;
-		MovingCube.receiveShadow = false;	
+		Strawberry1.castShadow = true;
+		Strawberry1.receiveShadow = false;	
+
+
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_front.png' ) }));
+		var Strawberry2Mat = new THREE.MeshFaceMaterial(materialArray);
+		var Strawberry2Geom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Strawberry2 = new THREE.Mesh( Strawberry2Geom, Strawberry2Mat );
+		Strawberry2.position.set(150, 30.1, 0);
+		scene.add( Strawberry2 );
+
+		Strawberry2.castShadow = true;
+		Strawberry2.receiveShadow = false;	
+		
+
+
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_front.png' ) }));
+		var AppleGMat = new THREE.MeshFaceMaterial(materialArray);
+		var AppleGGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		AppleG = new THREE.Mesh( AppleGGeom, AppleGMat );
+		AppleG.position.set(-150, 30.1, 0);
+		scene.add( AppleG );
+
+		AppleG.castShadow = true;
+		AppleG.receiveShadow = false;	
 		
 	}
 
@@ -253,40 +288,40 @@
 
 		// move forwards/backwards/left/right
 		if ( keyboard.pressed("W") )
-			MovingCube.translateZ( -moveDistance );
+			Strawberry1.translateZ( -moveDistance );
 		if ( keyboard.pressed("S") )
-			MovingCube.translateZ(  moveDistance );
+			Strawberry1.translateZ(  moveDistance );
 		if ( keyboard.pressed("Q") )
-			MovingCube.translateX( -moveDistance );
+			Strawberry1.translateX( -moveDistance );
 		if ( keyboard.pressed("E") )
-			MovingCube.translateX(  moveDistance );	
+			Strawberry1.translateX(  moveDistance );	
 
 		// rotate left/right/up/down
 		var rotation_matrix = new THREE.Matrix4().identity();
 		if ( keyboard.pressed("A") )
-			MovingCube.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+			Strawberry1.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
 		if ( keyboard.pressed("D") )
-			MovingCube.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+			Strawberry1.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
 		if ( keyboard.pressed("R") )
-			MovingCube.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+			Strawberry1.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
 		if ( keyboard.pressed("F") )
-			MovingCube.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+			Strawberry1.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
 		
 		if ( keyboard.pressed("Z") )
 		{
-			MovingCube.position.set(0,30.1,0);
-			MovingCube.rotation.set(0,0,0);
+			Strawberry1.position.set(0,30.1,0);
+			Strawberry1.rotation.set(0,0,0);
 		}
 			
 		// global coordinates
 		if ( keyboard.pressed("left") )
-			MovingCube.position.x -= moveDistance;
+			Strawberry1.position.x -= moveDistance;
 		if ( keyboard.pressed("right") )
-			MovingCube.position.x += moveDistance;
+			Strawberry1.position.x += moveDistance;
 		if ( keyboard.pressed("up") )
-			MovingCube.position.z -= moveDistance;
+			Strawberry1.position.z -= moveDistance;
 		if ( keyboard.pressed("down") )
-			MovingCube.position.z += moveDistance;
+			Strawberry1.position.z += moveDistance;
 			
 		controls.update();
 		stats.update();
@@ -312,7 +347,9 @@
 		}
 
 		// rotate the cube around its axes
-		MovingCube.rotation.y += 0.02;
+		Strawberry1.rotation.y += 0.02;
+		Strawberry2.rotation.y += 0.02;
+		AppleG.rotation.y += 0.02;
 
 		renderer.render( scene, camera );
 		
