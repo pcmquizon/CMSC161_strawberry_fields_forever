@@ -187,12 +187,8 @@
 		for (var i = 0; i < 6; i++){
 			material = new THREE.MeshBasicMaterial({
 				map: THREE.ImageUtils.loadTexture( imagePrefix + directions[i] + imageSuffix ),
-				side: THREE.BackSide,
+				side: THREE.BackSide
 			});
-			// if(directions[i]==="ypos" || directions[i]==="yneg"){
-			// 	material.castShadow = false;
-			// 	material.receiveShadow = true;
-			// }
 			materialArray.push(material);
 		}
 
