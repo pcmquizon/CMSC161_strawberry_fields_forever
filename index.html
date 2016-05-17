@@ -64,6 +64,11 @@
 
 	// custom global variables
 	var Strawberry1;
+	var Strawberry2;
+	var AppleG;
+	var Watermelon;
+	var ColoredCube;
+	var Dice;
 
 	SCREEN_HEIGHT = window.innerHeight;
 	SCREEN_WIDTH = window.innerWidth
@@ -172,6 +177,7 @@
 		
 		// SKYBOX/FOG	
 		var imagePrefix = "images/sky_";
+		//					/		/				/				/
 		var directions  = ["xpos", "xneg", "ypos", "yneg", "zpos", "zneg"];
 		var imageSuffix = ".png";
 		
@@ -196,6 +202,7 @@
 		var skyBoxGeometry = new THREE.CubeGeometry( 2500, 2500, 2500 );
 		// var skyBoxMaterial = new THREE.MeshBasicMaterial( { map: fog_color, side: THREE.BackSide } );
 		var skyBox = new THREE.Mesh( skyBoxGeometry, skyBoxMaterial );
+
 		scene.add(skyBox);
 		
 		skyBox.castShadow = false
@@ -257,6 +264,59 @@
 
 		AppleG.castShadow = true;
 		AppleG.receiveShadow = false;	
+
+
+
+
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_front.png' ) }));
+		var WatermelonMat = new THREE.MeshFaceMaterial(materialArray);
+		var WatermelonGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Watermelon = new THREE.Mesh( WatermelonGeom, WatermelonMat );
+		Watermelon.position.set(-300, 30.1, 0);
+		scene.add( Watermelon );
+
+		Watermelon.castShadow = true;
+		Watermelon.receiveShadow = false;	
+
+
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0xffff00 }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0x00ff00 }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0x0000ff }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0x00ffff }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0xff00ff }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0xff0000 }));
+		var ColoredCubeMat = new THREE.MeshFaceMaterial(materialArray);
+		var ColoredCubeGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		ColoredCube = new THREE.Mesh( ColoredCubeGeom, ColoredCubeMat );
+		ColoredCube.position.set(300, 30.1, 0);
+		scene.add( ColoredCube );
+
+		ColoredCube.castShadow = true;
+		ColoredCube.receiveShadow = false;	
+
+
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/3_right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/1_left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/6_top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/5_bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/4_back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/2_front.png' ) }));
+		var DiceMat = new THREE.MeshFaceMaterial(materialArray);
+		var DiceGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Dice = new THREE.Mesh( DiceGeom, DiceMat );
+		Dice.position.set(-450, 30.1, 0);
+		scene.add( Dice );
+
+		Dice.castShadow = true;
+		Dice.receiveShadow = false;	
 		
 	}
 
@@ -350,8 +410,25 @@
 		Strawberry1.rotation.y += 0.02;
 		Strawberry2.rotation.y += 0.02;
 		AppleG.rotation.y += 0.02;
+		Watermelon.rotation.y += 0.02;
+
+		ColoredCube.rotation.y += 0.02;
+		ColoredCube.rotation.z += 0.01;
+		ColoredCube.rotation.x += 0.03;
+		 
+		Dice.rotation.y += 0.02;
+		Dice.rotation.z += 0.01;
+		Dice.rotation.x += 0.03;
+
+
+
+		// AppleG.translateY( 10 );
+
 
 		renderer.render( scene, camera );
+
+		
+		
 		
 	}
 
