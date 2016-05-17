@@ -83,6 +83,8 @@
 	{
 		// SCENE
 		scene = new THREE.Scene();
+
+		//birds
 		birds = [];
 		boids = [];
 		var z = 400;
@@ -176,17 +178,16 @@
 		floor.receiveShadow	= true;
 		
 		// SKYBOX/FOG	
-		var imagePrefix = "images/sky_";
-		//					/		/				/				/
-		var directions  = ["xpos", "xneg", "ypos", "yneg", "zpos", "zneg"];
-		var imageSuffix = ".png";
+		var imagePrefix = "images/skybox_";
+		var directions  = ["right", "left", "top", "bottom", "near", "far"];
+		var imageSuffix = ".jpg";
 		
 		var materialArray = [];
 		var material;
 		for (var i = 0; i < 6; i++){
 			material = new THREE.MeshBasicMaterial({
 				map: THREE.ImageUtils.loadTexture( imagePrefix + directions[i] + imageSuffix ),
-				side: THREE.BackSide
+				side: THREE.BackSide,
 			});
 			// if(directions[i]==="ypos" || directions[i]==="yneg"){
 			// 	material.castShadow = false;
@@ -347,41 +348,69 @@
 		// local transformations
 
 		// move forwards/backwards/left/right
-		if ( keyboard.pressed("W") )
+		if ( keyboard.pressed("W") ){
 			Strawberry1.translateZ( -moveDistance );
-		if ( keyboard.pressed("S") )
+		}
+		if ( keyboard.pressed("S") ){
 			Strawberry1.translateZ(  moveDistance );
-		if ( keyboard.pressed("Q") )
+		}
+		if ( keyboard.pressed("Q") ){
 			Strawberry1.translateX( -moveDistance );
-		if ( keyboard.pressed("E") )
+		}
+		if ( keyboard.pressed("E") ){
 			Strawberry1.translateX(  moveDistance );	
+		}
 
 		// rotate left/right/up/down
 		var rotation_matrix = new THREE.Matrix4().identity();
-		if ( keyboard.pressed("A") )
+		if ( keyboard.pressed("A") ){
 			Strawberry1.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
-		if ( keyboard.pressed("D") )
+		}
+		if ( keyboard.pressed("D") ){
 			Strawberry1.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
-		if ( keyboard.pressed("R") )
+		}
+		if ( keyboard.pressed("R") ){
 			Strawberry1.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
-		if ( keyboard.pressed("F") )
+		}
+		if ( keyboard.pressed("F") ){
 			Strawberry1.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+		}
 		
 		if ( keyboard.pressed("Z") )
 		{
 			Strawberry1.position.set(0,30.1,0);
 			Strawberry1.rotation.set(0,0,0);
+
+			Strawberry2.position.set(150, 30.1, 0);
+			Strawberry2.rotation.set(0,0,0);
+
+			AppleG.position.set(-150, 30.1, 0);
+			AppleG.rotation.set(0,0,0);
+
+			Watermelon.position.set(-300, 30.1, 0);
+			Watermelon.rotation.set(0,0,0);
+
+			ColoredCube.position.set(300, 30.1, 0);
+			ColoredCube.rotation.set(0,0,0);
+
+			Dice.position.set(-450, 30.1, 0);
+			Dice.rotation.set(0,0,0);
+
 		}
 			
 		// global coordinates
-		if ( keyboard.pressed("left") )
+		if ( keyboard.pressed("left") ){
 			Strawberry1.position.x -= moveDistance;
-		if ( keyboard.pressed("right") )
+		}
+		if ( keyboard.pressed("right") ){
 			Strawberry1.position.x += moveDistance;
-		if ( keyboard.pressed("up") )
+		}
+		if ( keyboard.pressed("up") ){
 			Strawberry1.position.z -= moveDistance;
-		if ( keyboard.pressed("down") )
+		}
+		if ( keyboard.pressed("down") ){
 			Strawberry1.position.z += moveDistance;
+		}
 			
 		controls.update();
 		stats.update();
