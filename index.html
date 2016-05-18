@@ -152,15 +152,21 @@
 		scene.add( light );
 
 		//SHADOW
-		var spotLight	= new THREE.SpotLight( 0x888888 );
-		spotLight.position.set( 75,1250,-750 );
-		spotLight.shadowCameraNear	= 0.01;		
+		var spotLight	= new THREE.DirectionalLight( 0x888888 );
+		spotLight.position.set( 150,1500,-800 );
+		spotLight.shadowCameraNear	= 0.01;	
+
+		spotLight.shadowCameraLeft = -3000;
+		spotLight.shadowCameraRight = 3000;
+		spotLight.shadowCameraTop = 3500;
+		spotLight.shadowCameraBottom = -3000;
+
 		spotLight.castShadow		= true;
 		spotLight.shadowDarkness	= 0.5;
 		// spotLight.shadowCameraVisible	= true;
 		// console.dir(spotLight)
-		spotLight.shadowMapWidth	= 1024;
-		spotLight.shadowMapHeight	= 1024;
+		spotLight.shadowMapWidth	= 4096;
+		spotLight.shadowMapHeight	= 4096;
 		scene.add( spotLight );	
 		
 		// FLOOR
@@ -187,12 +193,8 @@
 		for (var i = 0; i < 6; i++){
 			material = new THREE.MeshBasicMaterial({
 				map: THREE.ImageUtils.loadTexture( imagePrefix + directions[i] + imageSuffix ),
-				side: THREE.BackSide,
+				side: THREE.BackSide
 			});
-			// if(directions[i]==="ypos" || directions[i]==="yneg"){
-			// 	material.castShadow = false;
-			// 	material.receiveShadow = true;
-			// }
 			materialArray.push(material);
 		}
 
