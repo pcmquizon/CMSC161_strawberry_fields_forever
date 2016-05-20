@@ -98,6 +98,7 @@
 	var Direction;
 	var Crate;
 	var st2Clone, aClone;
+	var Beatle1, Beatle2, Beatle3, Beatle4, albumCover;
 
 	var SCREEN_HEIGHT = window.innerHeight;
 	var SCREEN_WIDTH = window.innerWidth;
@@ -126,8 +127,8 @@
 		var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
 		camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
 		scene.add(camera);
-		// camera.position.set(0,-150,-750);
-		camera.position.set(0,100,50);
+		camera.position.set(0,-150,-750);
+		// camera.position.set(0,100,50);
 		camera.lookAt(scene.position);	
 
 		//////////////////////////
@@ -389,15 +390,81 @@
 		//////////////////////////
 		var materialArray = [];
 		for(var i=0; i<6; i++){
-			materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/crate_0.png' ) }));
+			materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/beatle1.jpg' ) }));
 		}
-		var CrateMat = new THREE.MeshFaceMaterial(materialArray);
-		var CrateGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
-		Crate = new THREE.Mesh( CrateGeom, CrateMat );
-		Crate.position.set(-100, floor+125, -0);
-		scene.add( Crate );
-		Crate.castShadow = true;
-		Crate.receiveShadow = true;	
+		var Beatle1Mat = new THREE.MeshFaceMaterial(materialArray);
+		var Beatle1Geom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Beatle1 = new THREE.Mesh( Beatle1Geom, Beatle1Mat );
+		Beatle1.position.set(-300, 30.1, 0);
+		scene.add( Beatle1 );
+		Beatle1.castShadow = true;
+		Beatle1.receiveShadow = true;	
+
+
+		//////////////////////////
+		// Beatles 2
+		//////////////////////////
+		var materialArray = [];
+		for(var i=0; i<6; i++){
+			materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/beatle2.jpg' ) }));
+		}
+		var Beatle2Mat = new THREE.MeshFaceMaterial(materialArray);
+		var Beatle2Geom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Beatle2 = new THREE.Mesh( Beatle2Geom, Beatle2Mat );
+		Beatle2.position.set(-150, 30.1, 0);
+		scene.add( Beatle2 );
+		Beatle2.castShadow = true;
+		Beatle2.receiveShadow = true;	
+
+
+		//////////////////////////
+		// Beatles 3
+		//////////////////////////
+		var materialArray = [];
+		for(var i=0; i<6; i++){
+			materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/beatle3.jpg' ) }));
+		}
+		var Beatle3Mat = new THREE.MeshFaceMaterial(materialArray);
+		var Beatle3Geom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Beatle3 = new THREE.Mesh( Beatle3Geom, Beatle3Mat );
+		Beatle3.position.set(150, 30.1, 0);
+		scene.add( Beatle3 );
+		Beatle3.castShadow = true;
+		Beatle3.receiveShadow = true;	
+
+
+		//////////////////////////
+		// Beatles 4
+		//////////////////////////
+		var materialArray = [];
+		for(var i=0; i<6; i++){
+			materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/beatle4.jpg' ) }));
+		}
+		var Beatle4Mat = new THREE.MeshFaceMaterial(materialArray);
+		var Beatle4Geom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Beatle4 = new THREE.Mesh( Beatle4Geom, Beatle4Mat );
+		Beatle4.position.set(300, 30.1, 0);
+		scene.add( Beatle4 );
+		Beatle4.castShadow = true;
+		Beatle4.receiveShadow = true;	
+
+
+
+		//////////////////////////
+		// Album Cover
+		//////////////////////////
+		var materialArray = [];
+		for(var i=0; i<6; i++){
+			materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/cover.jpg' ) }));
+		}
+		var albumCoverMat = new THREE.MeshFaceMaterial(materialArray);
+		var albumCoverGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		albumCover = new THREE.Mesh( albumCoverGeom, albumCoverMat );
+		albumCover.position.set(0, 30.1, 0);
+		scene.add( albumCover );
+		albumCover.castShadow = true;
+		albumCover.receiveShadow = true;	
+		
 		
 	}
 
@@ -792,110 +859,94 @@
 
 		// move forwards/backwards/left/right
 		if ( keyboard.pressed("W") ){
-			Strawberry1.translateZ( -moveDistance );
-			Strawberry2.translateZ( -moveDistance );
-			AppleG.translateZ( -moveDistance );
-			Watermelon.translateZ( -moveDistance );
+			Beatle1.translateZ( -moveDistance );
+			Beatle2.translateZ( -moveDistance );
+			Beatle3.translateZ( -moveDistance );
+			Beatle4.translateZ( -moveDistance );
 		}
 		if ( keyboard.pressed("S") ){
-			Strawberry1.translateZ(  moveDistance );
-			Strawberry2.translateZ(  moveDistance );
-			AppleG.translateZ(  moveDistance );
-			Watermelon.translateZ( moveDistance );
+			Beatle1.translateZ(  moveDistance );
+			Beatle2.translateZ(  moveDistance );
+			Beatle3.translateZ(  moveDistance );
+			Beatle4.translateZ( moveDistance );
 		}
 		if ( keyboard.pressed("Q") ){
-			Strawberry1.translateX( -moveDistance );
-			Strawberry2.translateX( -moveDistance );
-			AppleG.translateX( -moveDistance );
-			Watermelon.translateX( -moveDistance );
+			Beatle1.translateX( -moveDistance );
+			Beatle2.translateX( -moveDistance );
+			Beatle3.translateX( -moveDistance );
+			Beatle4.translateX( -moveDistance );
 		}
 		if ( keyboard.pressed("E") ){
-			Strawberry1.translateX(  moveDistance );
-			Strawberry2.translateX(  moveDistance );
-			AppleG.translateX( moveDistance );
-			Watermelon.translateX( moveDistance );
+			Beatle1.translateX(  moveDistance );
+			Beatle2.translateX(  moveDistance );
+			Beatle3.translateX( moveDistance );
+			Beatle4.translateX( moveDistance );
 		}
 
 		// rotate left/right/up/down
 		var rotation_matrix = new THREE.Matrix4().identity();
 		if ( keyboard.pressed("A") ){
-			Strawberry1.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
-			Strawberry2.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
-			AppleG.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
-			Watermelon.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+			Beatle1.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+			Beatle2.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+			Beatle3.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+			Beatle4.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
 		}
 		if ( keyboard.pressed("D") ){
-			Strawberry1.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
-			Strawberry2.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
-			AppleG.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
-			Watermelon.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+			Beatle1.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+			Beatle2.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+			Beatle3.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+			Beatle4.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
 		}
 		if ( keyboard.pressed("R") ){
-			Strawberry1.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
-			Strawberry2.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
-			AppleG.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
-			Watermelon.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+			Beatle1.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+			Beatle2.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+			Beatle3.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+			Beatle4.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
 		}
 		if ( keyboard.pressed("F") ){
-			Strawberry1.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
-			Strawberry2.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
-			AppleG.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
-			Watermelon.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+			Beatle1.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+			Beatle2.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+			Beatle3.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+			Beatle4.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
 		}
 		
-		// if ( keyboard.pressed("Z") )
-		// {
-
-		// 	Strawberry1.position.set(0,30.1,0);
-		// 	Strawberry1.rotation.set(0,0,0);
-
-		// 	Strawberry2.position.set(150, 30.1, 0);
-		// 	Strawberry2.rotation.set(0,0,0);
-
-		// 	AppleG.position.set(-150, 30.1, 0);
-		// 	AppleG.rotation.set(0,0,0);
-
-		// 	Watermelon.position.set(-300, 30.1, 0);
-		// 	Watermelon.rotation.set(0,0,0);
-
-		// }
-			
+		
 		// global coordinates
 		if ( keyboard.pressed("J") ){
-			Strawberry2.position.x += moveDistance;
-			Strawberry1.position.x -= moveDistance;
-			AppleG.position.x += moveDistance;
-			Watermelon.position.x -= moveDistance;
+			Beatle2.position.x += moveDistance;
+			Beatle1.position.x -= moveDistance;
+			Beatle3.position.x += moveDistance;
+			Beatle4.position.x -= moveDistance;
 		}
 		if ( keyboard.pressed("L") ){
-			Strawberry2.position.x -= moveDistance;
-			Strawberry1.position.x += moveDistance;
-			AppleG.position.x -= moveDistance;
-			Watermelon.position.x += moveDistance;
+			Beatle2.position.x -= moveDistance;
+			Beatle1.position.x += moveDistance;
+			Beatle3.position.x -= moveDistance;
+			Beatle4.position.x += moveDistance;
 		}
 		if ( keyboard.pressed("I") ){
-			Strawberry2.position.z += moveDistance;
-			Strawberry1.position.z -= moveDistance;
-			AppleG.position.z += moveDistance;
-			Watermelon.position.z -= moveDistance;
+			Beatle2.position.z += moveDistance;
+			Beatle1.position.z -= moveDistance;
+			Beatle3.position.z += moveDistance;
+			Beatle4.position.z -= moveDistance;
 		}
 		if ( keyboard.pressed("K") ){
-			Strawberry2.position.z -= moveDistance;
-			Strawberry1.position.z += moveDistance;
-			AppleG.position.z -= moveDistance;
-			Watermelon.position.z += moveDistance;
+			Beatle2.position.z -= moveDistance;
+			Beatle1.position.z += moveDistance;
+			Beatle3.position.z -= moveDistance;
+			Beatle4.position.z += moveDistance;
 		}
 		if ( keyboard.pressed("U") ){
-			Strawberry2.position.y -= moveDistance;
-			Strawberry1.position.y += moveDistance;
-			AppleG.position.y -= moveDistance;
-			Watermelon.position.y += moveDistance;
+			Beatle2.position.y -= moveDistance;
+			Beatle1.position.y += moveDistance;
+			Beatle3.position.y -= moveDistance;
+			Beatle4.position.y += moveDistance;
 		}
 		if ( keyboard.pressed("O") ){
-			Strawberry2.position.y += moveDistance;
-			Strawberry1.position.y -= moveDistance;
-			AppleG.position.y += moveDistance;
-			Watermelon.position.y -= moveDistance;
+			Beatle2.position.y += moveDistance;
+			Beatle1.position.y -= moveDistance;
+			Beatle3.position.y += moveDistance;
+			Beatle4.position.y -= moveDistance;
 		}
 
 		controls.update();
@@ -929,6 +980,12 @@
 		AppleG.rotation.y += 0.02;
 		aClone.rotation.y += 0.02;
 		Watermelon.rotation.y += 0.02;
+
+		albumCover.rotation.y += 0.02;
+		Beatle1.rotation.y += 0.02;
+		Beatle2.rotation.y += 0.02;
+		Beatle3.rotation.y += 0.02;
+		Beatle4.rotation.y += 0.02;
 
 		ColoredCube.rotation.y += 0.02;
 		ColoredCube.rotation.z += 0.01;
