@@ -16,7 +16,7 @@
 		</audio>
 	</div>
 
-	<script src="js/Three.js"></script>
+	<script src="js/three.js"></script>
 	<script src="js/Projector.js"></script>
 	<script src="js/CanvasRenderer.js"></script>
 	<script src="js/Detector.js"></script>
@@ -28,6 +28,9 @@
 	<script src="js/Bird.js"></script>
 	<script src="js/Boid.js"></script>
 	<script src="js/stats.min.js"></script>
+	<script src="js/OBJLoader.js"></script>
+	<script src='js/dat.gui.min.js'></script>
+	<script src="js/photons.min.js"></script>
 
 	<!-- jQuery code to display an information button and box when clicked. -->
 	<script src="js/jquery-1.9.1.js"></script>
@@ -44,7 +47,9 @@
 		<li>A/D: Rotate Left/Right
 		<li>Q/E: Translate Left/Right
 		<li>R/F: Rotate Up/Down
-		<li>Arrow keys: Translate (global directions)
+		<li>C/V: Translate Up/Down
+		<li>I/J/K/L: Translate (global directions)
+		<li>Arrow keys: Pan Camera (global directions)
 		<li>Z: Reset position and rotation.
 		</ul>
 	</div>
@@ -53,9 +58,31 @@
 	<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
 	
 	<script>
+	'use strict';
+
 	// MAIN
+	var ParticleSystemIDs = Object.freeze(
+		{
+			Smoke1: 1,
+			Smoke2: 2,
+			Flame: 3,
+			FlameEmbers: 4
+		} );
+
+	var ParticleEnvironmentIDs = Object.freeze(
+		{
+			Campfire: 1
+		} );
+
+	var rendererContainer;
+	var screenWidth, screenHeight;
+	var pointLight, ambientLight;
+	var particleSystems, loadingManager;
+	var currentEnvironmentID;
+	var particleSystemsParent;
 
 	// standard global variables
+	var tl = new THREE.TextureLoader();
 	var onRenderFcts= [];
 	var container, scene, camera, renderer, controls, stats;
 	var boid, boids, birds, bird, Bird;
@@ -69,11 +96,19 @@
 	var Watermelon;
 	var ColoredCube;
 	var Dice;
+	var Direction;
+	var Crate;
+	var st2Clone, aClone;
 
-	SCREEN_HEIGHT = window.innerHeight;
-	SCREEN_WIDTH = window.innerWidth
-	SCREEN_WIDTH_HALF = SCREEN_WIDTH  / 2,
-	SCREEN_HEIGHT_HALF = SCREEN_HEIGHT / 2;
+	var SCREEN_HEIGHT = window.innerHeight;
+	var SCREEN_WIDTH = window.innerWidth;
+	var SCREEN_WIDTH_HALF = SCREEN_WIDTH  / 2;
+	var SCREEN_HEIGHT_HALF = SCREEN_HEIGHT / 2;
+
+	var width = 1;
+	var height = 1;
+
+	var floor = -1250;
 
 	init();
 	animate();
@@ -84,6 +119,610 @@
 		// SCENE
 		scene = new THREE.Scene();
 
+		plantTrees();
+		freeBirds();
+
+		// CAMERA
+		var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+		var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+		camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+		scene.add(camera);
+		// camera.position.set(0,-150,-750);
+		camera.position.set(0,100,50);
+		camera.lookAt(scene.position);	
+
+		//////////////////////////
+		// RENDERER
+		//////////////////////////
+		if ( Detector.webgl )
+			renderer = new THREE.WebGLRenderer( {antialias:true} );
+		else
+			renderer = new THREE.CanvasRenderer();
+
+		renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+		document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+		document.body.appendChild( renderer.domElement );
+		container = document.getElementById( 'ThreeJS' );
+		container.appendChild( renderer.domElement );
+		
+      	// renderer.shadowMapSoft = false;
+		renderer.shadowMap.enabled = true;
+		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+		//////////////////////////
+		// EVENTS
+		//////////////////////////
+		THREEx.WindowResize(renderer, camera);
+		THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+
+
+		//////////////////////////
+		// CONTROLS
+		//////////////////////////
+		controls = new THREE.OrbitControls( camera, renderer.domElement );
+		controls.enableDamping = true;
+		controls.dampingFactor = 0.25;
+
+		// STATS
+		stats = new Stats();
+		// stats.domElement.style.position = 'absolute';
+		// stats.domElement.style.bottom = '0px';
+		// stats.domElement.style.zIndex = 100;
+		// container.appendChild( stats.domElement );
+
+		//////////////////////////
+		// LIGHT
+		//////////////////////////
+		var aLight	= new THREE.AmbientLight( 0x404040 );
+		scene.add( aLight );
+		
+		var light = new THREE.PointLight(0xBEA073);
+		light.position.set(0,0,0);
+		scene.add(light);
+		// scene.add( new THREE.PointLightHelper(light, 1.0) );
+
+
+		//SHADOW
+		var dLight	= new THREE.DirectionalLight( 0xffeedd, 1 );		
+		dLight.position.set( 150,1250,-800 );
+		dLight.castShadow = true;
+		dLight.shadow.camera.near = 0.01;	
+		dLight.shadow.camera.far = 3500;	
+		dLight.shadow.camera.left = -2000;
+		dLight.shadow.camera.right = 2000;
+		dLight.shadow.camera.top = 2500;
+		dLight.shadow.camera.bottom = -2000;
+		dLight.shadow.darkness = 0.5;
+		dLight.bias	= -0.001;
+		dLight.shadow.mapSize.width	= 4096;
+		dLight.shadow.mapSize.height = 4096;
+		scene.add( dLight );	
+		// scene.add( new THREE.CameraHelper(dLight.shadow.camera) );	
+		
+
+
+		//////////////////////////
+		// Skybox
+		//////////////////////////
+		var imagePrefix = "images/skybox_";
+		var directions  = ["right", "left", "top", "bottom", "front", "back"];
+		var imageSuffix = ".jpg";
+		
+		var materialArray = [];
+		var material;
+		for (var i = 0; i < 6; i++){
+			material = new THREE.MeshLambertMaterial({
+				map: tl.load( imagePrefix + directions[i] + imageSuffix ),
+				side: THREE.BackSide
+			});
+			materialArray.push(material);
+		}
+
+		var skyBoxMaterial = new THREE.MeshFaceMaterial( materialArray );
+		var skyBoxGeometry = new THREE.CubeGeometry( 2500, 2500, 2500 );
+		skyBoxGeometry.computeFaceNormals();
+		skyBoxGeometry.computeVertexNormals();
+
+		var skyBox = new THREE.Mesh( skyBoxGeometry, skyBoxMaterial );
+		scene.add(skyBox);
+		skyBox.castShadow = false;
+		skyBox.receiveShadow = true;
+		
+
+		//////////////////
+		// CUSTOM CUBES //   // create an array with six textures for a cool cube(s)
+		//////////////////
+
+		
+		//////////////////////////
+		// Primary Strawberry
+		//////////////////////////
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/front.png' ) }));
+		var Strawberry1Mat = new THREE.MeshFaceMaterial(materialArray);
+		var Strawberry1Geom = new THREE.CubeGeometry( 95, 95, 95, 1, 1, 1, materialArray );
+		Strawberry1 = new THREE.Mesh( Strawberry1Geom, Strawberry1Mat );
+		Strawberry1.position.set(-900, floor+75, -600);
+		scene.add( Strawberry1 );
+		Strawberry1.castShadow = true;
+		Strawberry1.receiveShadow = true;	
+
+		//////////////////////////
+		// Secondary Strawberry
+		//////////////////////////
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/s_right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/s_left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/s_top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/s_bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/s_back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/s_front.png' ) }));
+		var Strawberry2Mat = new THREE.MeshFaceMaterial(materialArray);
+		var Strawberry2Geom = new THREE.CubeGeometry( 85, 85, 85, 1, 1, 1, materialArray );
+		Strawberry2 = new THREE.Mesh( Strawberry2Geom, Strawberry2Mat );		
+		Strawberry2.position.set(350, floor+75, -800);
+		scene.add( Strawberry2 );
+		Strawberry2.castShadow = true;
+		Strawberry2.receiveShadow = false;	
+
+		st2Clone = Strawberry2.clone();
+		st2Clone.position.set(50, floor+75, -800);
+		scene.add( st2Clone );
+
+		
+		//////////////////////////
+		// Apple
+		//////////////////////////
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/g_right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/g_left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/g_top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/g_bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/g_back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/g_front.png' ) }));
+		var AppleGMat = new THREE.MeshFaceMaterial(materialArray);
+		var AppleGGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		AppleG = new THREE.Mesh( AppleGGeom, AppleGMat );
+		AppleG.position.set(250, floor+75, -650);
+		scene.add( AppleG );
+		AppleG.castShadow = true;
+		AppleG.receiveShadow = true;	
+		aClone = AppleG.clone();
+		aClone.position.set(150, floor+75, -950);
+		scene.add( aClone );
+
+		//////////////////////////
+		// Watermelon
+		//////////////////////////
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/w_right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/w_left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/w_top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/w_bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/w_back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/w_front.png' ) }));
+		var WatermelonMat = new THREE.MeshFaceMaterial(materialArray);
+		var WatermelonGeom = new THREE.CubeGeometry( 65, 65, 65, 1, 1, 1, materialArray );
+		Watermelon = new THREE.Mesh( WatermelonGeom, WatermelonMat );
+		Watermelon.position.set(200, floor+75, -800);
+		scene.add( Watermelon );
+		Watermelon.castShadow = true;
+		Watermelon.receiveShadow = true;	
+
+		//////////////////////////
+		// Colored Cube
+		//////////////////////////
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0xffff00 }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0x00ff00 }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0x0000ff }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0x00ffff }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0xff00ff }));
+		materialArray.push(new THREE.MeshPhongMaterial( { color: 0xff0000 }));
+		var ColoredCubeMat = new THREE.MeshFaceMaterial(materialArray);
+		var ColoredCubeGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		ColoredCube = new THREE.Mesh( ColoredCubeGeom, ColoredCubeMat );
+		ColoredCube.position.set(0, floor+125, 100);
+		scene.add( ColoredCube );
+		ColoredCube.castShadow = true;
+		ColoredCube.receiveShadow = true;	
+
+		//////////////////////////
+		// Dice
+		//////////////////////////
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/3_right.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/1_left.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/6_top.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/5_bot.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/4_back.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/2_front.png' ) }));
+		var DiceMat = new THREE.MeshFaceMaterial(materialArray);
+		var DiceGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Dice = new THREE.Mesh( DiceGeom, DiceMat );
+		Dice.position.set(100, floor+125, 0);
+		scene.add( Dice );
+		Dice.castShadow = true;
+		Dice.receiveShadow = true;	
+
+		//////////////////////////
+		// Direction Cube
+		//////////////////////////
+		var materialArray = [];
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/dir_xneg.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/dir_xpos.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/dir_ypos.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/dir_yneg.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/dir_zpos.png' ) }));
+		materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/dir_zneg.png' ) }));
+		var DirectionMat = new THREE.MeshFaceMaterial(materialArray);
+		var DirectionGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Direction = new THREE.Mesh( DirectionGeom, DirectionMat );
+		Direction.position.set(0, floor+125, -100);
+		scene.add( Direction );
+		Direction.castShadow = true;
+		Direction.receiveShadow = true;	
+
+		//////////////////////////
+		// Crate
+		//////////////////////////
+		var materialArray = [];
+		for(var i=0; i<6; i++){
+			materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/crate_0.png' ) }));
+		}
+		var CrateMat = new THREE.MeshFaceMaterial(materialArray);
+		var CrateGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Crate = new THREE.Mesh( CrateGeom, CrateMat );
+		Crate.position.set(-100, floor+125, -0);
+		scene.add( Crate );
+		Crate.castShadow = true;
+		Crate.receiveShadow = true;	
+		
+	}
+
+	function getScreenDimensions() {
+
+		screenWidth = window.innerWidth;
+		screenHeight = window.innerHeight;
+
+	}
+
+	function plantTrees(){
+		PHOTONS.Util.initializeLoadingManager();
+		initSceneGeometry( function() {
+
+			startParticleSystemEnvironment ( ParticleEnvironmentIDs.Campfire );
+			animate();
+
+		} );
+
+	}
+
+
+	function initSceneGeometry( onFinished ) {
+
+		var loadedCount = 0;
+		var targetLoadCount = 3;
+		var onFinishedCalled = false;
+
+		function incrementAndCheckLoadComplete() {
+
+			loadedCount ++;
+
+			if ( ! onFinishedCalled && loadedCount >= targetLoadCount && onFinished ) {
+
+				onFinishedCalled = true;
+				onFinished();
+
+			}
+
+		}
+
+		// ---------------------
+		// load campfire
+		// ---------------------
+		var campFireMaterial = new THREE.MeshLambertMaterial( {
+
+			color: 0xffffff,
+			vertexColors: THREE.NoColors,
+			side: THREE.FrontSide
+
+		} );
+
+		
+
+		PHOTONS.Util.loadObj( 'images/campfire/models/campfire.obj', 'images/campfire/models/campfire_texture.png', campFireMaterial,
+
+			function( mesh ) {
+
+				mesh.castShadow = true;
+				mesh.receiveShadow = true;
+
+			},
+				function( object ) {
+
+					object.position.set( -500, floor, 500 );
+					object.scale.set( 55, 55, 55 );
+					scene.add( object );
+
+					incrementAndCheckLoadComplete();
+
+				}
+
+			);
+
+		// ---------------------
+		// load rocks
+		// ---------------------
+
+		var rockMaterial = new THREE.MeshLambertMaterial( {
+
+			color: 0xffffff,
+			vertexColors: THREE.NoColors,
+			side: THREE.FrontSide
+
+		} );
+
+		PHOTONS.Util.loadObj( 'images/campfire/models/brownrock.obj', 'images/campfire/models/brownrock.png', rockMaterial,
+
+			function( mesh ) {
+
+				mesh.castShadow = true;
+				mesh.receiveShadow = true;
+
+			},
+				function( object ) {
+
+					object.position.set( -100, floor, 0 );
+					object.scale.set( 1.55, 1.55, 1.55 );
+					// scene.add( object );
+
+					var rockObject1 = object.clone();
+					rockObject1.rotation.z = - Math.PI / 4;
+					rockObject1.rotation.x = Math.PI / 1;
+					rockObject1.position.set( -955, floor, 25 );
+					rockObject1.scale.set( 9.35, 9.35, 9.35 );
+					scene.add( rockObject1 );
+
+					var rockObject2 = object.clone();
+					rockObject2.rotation.z = - Math.PI / 2;
+					rockObject2.rotation.x = Math.PI / 3;
+					rockObject2.position.set( -955, floor, -1150 );
+					rockObject2.scale.set( 7.35, 7.35, 7.35 );
+					scene.add( rockObject2 );
+
+					var rockObject3 = object.clone();
+					rockObject3.rotation.x = Math.PI / 2;
+					rockObject3.position.set( -955, floor, 1150 );
+					rockObject3.scale.set( 6.65, 6.65, 6.85 );
+					scene.add( rockObject3 );
+
+
+
+					incrementAndCheckLoadComplete();
+
+				}
+
+			);
+
+		// ---------------------
+		// load trees
+		// ---------------------
+
+		var treeMaterial = new THREE.MeshLambertMaterial( {
+
+			color: 0xffffff,
+			vertexColors: THREE.NoColors,
+			side: THREE.FrontSide
+
+		} );
+
+		PHOTONS.Util.loadObj( 'images/campfire/models/pinetree_doubleface.obj', 'images/campfire/models/pinetree.jpg', treeMaterial,
+
+			function( mesh ) {
+
+				mesh.castShadow = true;
+				mesh.receiveShadow = true;
+
+			},
+				function( object ) {
+
+					object.rotation.z = Math.PI / 64;
+					object.rotation.x = Math.PI / 64;
+					object.position.set( 660, floor, -250 );
+					object.scale.set( 4.155, 4.155, 4.155 );
+					// scene.add( object );
+
+
+					var treeObject1 = object.clone();
+					treeObject1.rotation.z = - Math.PI / 16;
+					treeObject1.rotation.x = Math.PI / 32;
+					treeObject1.position.set( 660, floor, -250 );
+					treeObject1.scale.set( 4.855, 4.855, 4.855 );
+					scene.add( treeObject1 );
+
+					var treeObject2 = object.clone();
+					treeObject2.rotation.z = - Math.PI / 16;
+					treeObject2.rotation.x = Math.PI / 32;
+					treeObject2.position.set( 1000, floor, -80 );
+					treeObject2.scale.set( 3.855, 3.855, 3.855 );
+					scene.add( treeObject2 );
+
+					var treeObject3 = object.clone();
+					treeObject3.rotation.z = - Math.PI / 16;
+					treeObject3.rotation.x = Math.PI / 32;
+					treeObject3.position.set( 705, floor, 0 );
+					treeObject3.scale.set( 5.855, 5.855, 5.855 );
+					scene.add( treeObject3 );
+
+
+
+					var treeObject4 = object.clone();
+					treeObject4.rotation.z = - Math.PI / 16;
+					treeObject4.position.set( 705, floor, -750 );
+					treeObject4.scale.set( 4.855, 4.855, 4.855 );
+					scene.add( treeObject4 );
+
+					var treeObject5 = object.clone();
+					treeObject5.rotation.x = Math.PI / 32;
+					treeObject5.position.set( 850, floor, -1000 );
+					treeObject5.scale.set( 3.855, 3.855, 3.855 );
+					scene.add( treeObject5 );
+
+					var treeObject6 = object.clone();
+					treeObject6.position.set( 1000, floor, -580 );
+					treeObject6.scale.set( 5.855, 5.855, 5.855 );
+					scene.add( treeObject6 );
+
+
+					var treeObject7 = object.clone();
+					treeObject7.position.set( 1000, floor, 480 );
+					treeObject7.scale.set( 4.855, 4.855, 4.855 );
+					scene.add( treeObject7 );
+
+					var treeObject8 = object.clone();
+					treeObject8.rotation.z = - Math.PI / 16;
+					treeObject8.position.set( 805, floor, 300 );
+					treeObject8.scale.set( 3.855, 3.855, 3.855 );
+					scene.add( treeObject8 );
+
+					var treeObject9 = object.clone();
+					treeObject9.rotation.x = Math.PI / 32;
+					treeObject9.position.set( 660, floor, 550 );
+					treeObject9.scale.set( 5.855, 5.855, 5.855 );
+					scene.add( treeObject9 );
+
+
+
+					var treeObject10 = object.clone();
+					treeObject10.position.set( 500, floor, 725 );
+					treeObject10.scale.set( 4.855, 4.855, 4.855 );
+					scene.add( treeObject10 );
+
+					var treeObject11 = object.clone();
+					treeObject11.rotation.x = Math.PI / 32;
+					treeObject11.position.set( 755, floor, 1050 );
+					treeObject11.scale.set( 3.855, 3.855, 3.855 );
+					scene.add( treeObject11 );
+
+					var treeObject12 = object.clone();
+					treeObject12.rotation.z = - Math.PI / 16;
+					treeObject12.position.set( 960, floor, 850 );
+					treeObject12.scale.set( 5.855, 5.855, 5.855 );
+					scene.add( treeObject12 );
+
+
+					var treeObject13 = object.clone();
+					treeObject13.position.set( -1000, floor, 325 );
+					treeObject13.scale.set( 4.855, 4.855, 4.855 );
+					scene.add( treeObject13 );
+
+					var treeObject14 = object.clone();
+					treeObject14.rotation.x = Math.PI / 32;
+					treeObject14.rotation.z = - Math.PI / 64;
+					treeObject14.position.set( -955, floor, 450 );
+					treeObject14.scale.set( 3.855, 3.855, 3.855 );
+					scene.add( treeObject14 );
+
+					var treeObject15 = object.clone();
+					treeObject15.rotation.z = - Math.PI / 64;
+					treeObject15.position.set( -1050, floor, 650 );
+					treeObject15.scale.set( 5.855, 5.855, 5.855 );
+					scene.add( treeObject15 );
+
+
+					var treeObject16 = object.clone();
+					treeObject16.rotation.z = - Math.PI / 32;
+					treeObject16.position.set( -500, floor, 1025 );
+					treeObject16.scale.set( 5.855, 5.855, 5.855 );
+					scene.add( treeObject16 );
+
+					var treeObject17 = object.clone();
+					treeObject17.rotation.x = Math.PI / 32;
+					treeObject17.rotation.z = - Math.PI / 64;
+					treeObject17.position.set( -55, floor, 950 );
+					treeObject17.scale.set( 4.855, 4.855, 4.855 );
+					scene.add( treeObject17 );
+
+					var treeObject18 = object.clone();
+					treeObject18.rotation.z = - Math.PI / 64;
+					treeObject18.rotation.x = - Math.PI / 64;
+					treeObject18.position.set( 250, floor, 1000 );
+					treeObject18.scale.set( 5.855, 5.855, 5.855 );
+					scene.add( treeObject18 );
+
+					var treeObject19 = object.clone();
+					treeObject19.rotation.z = - Math.PI / 16;
+					treeObject19.position.set( 305, floor, 750 );
+					treeObject19.scale.set( 4.855, 4.855, 4.855 );
+					scene.add( treeObject19 );
+
+					var treeObject20 = object.clone();
+					treeObject20.rotation.x = Math.PI / 32;
+					treeObject20.position.set( -75, floor, 800 );
+					treeObject20.scale.set( 3.855, 3.855, 3.855 );
+					scene.add( treeObject20 );
+
+					var treeObject21 = object.clone();
+					treeObject6.position.set( -250, floor, 780 );
+					treeObject6.scale.set( 5.855, 5.855, 5.855 );
+					scene.add( treeObject21 );
+
+					incrementAndCheckLoadComplete();
+
+				}
+
+			);
+		
+
+		particleSystemsParent = new THREE.Object3D();
+		particleSystemsParent.position.set( 0, 0, 0 );
+		particleSystemsParent.matrixAutoUpdate = true;
+		scene.add( particleSystemsParent );
+
+	}
+
+
+	function startParticleSystemEnvironment( id ) {
+
+		Object.keys( particleSystems ).forEach( function( key ) {
+
+			var system = particleSystems[ key ];
+			system.deactivate();
+
+		} );
+
+		currentEnvironmentID = id;
+		if ( id == ParticleEnvironmentIDs.Campfire ) {
+
+			smokeActive = true;
+			particleSystems[ ParticleSystemIDs.Flame ].activate();
+			particleSystems[ ParticleSystemIDs.FlameEmbers ].activate();
+			updateSmokeType();
+			pointLight.distance = 300;
+			pointLight.intensity = 6;
+			pointLight.color.setRGB( 1, .8, .4 );
+			pointLight.decay = 2;
+			pointLight.position.set( 0, floor, 0 );
+
+			ambientLight.color.setRGB( .08, .08, .08 );
+
+		} else {
+
+			return;
+
+		}
+
+	}
+
+
+	function freeBirds(){
 		//birds
 		birds = [];
 		boids = [];
@@ -107,220 +746,6 @@
 			// bird.castShadow = true;
 			// bird.receiveShadow = false;
 		}
-
-		// CAMERA
-		var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
-		var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
-		camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
-		scene.add(camera);
-		camera.position.set(0,-150,-750);
-		camera.lookAt(scene.position);	
-
-		// RENDERER
-		if ( Detector.webgl )
-			renderer = new THREE.WebGLRenderer( {antialias:true} );
-		else
-			renderer = new THREE.CanvasRenderer();
-
-		renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-
-		document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-		document.body.appendChild( renderer.domElement );
-		container = document.getElementById( 'ThreeJS' );
-		container.appendChild( renderer.domElement );
-
-		renderer.shadowMapEnabled	= true;
-		renderer.shadowMapType 		= THREE.PCFSoftShadowMap;
-
-		// EVENTS
-		THREEx.WindowResize(renderer, camera);
-		THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
-
-		// CONTROLS
-		controls = new THREE.OrbitControls( camera, renderer.domElement );
-
-		// STATS
-		stats = new Stats();
-		stats.domElement.style.position = 'absolute';
-		stats.domElement.style.bottom = '0px';
-		stats.domElement.style.zIndex = 100;
-		// container.appendChild( stats.domElement );
-
-		// LIGHT
-		var light	= new THREE.DirectionalLight( 0x777777, 2 );
-		light.position.set( 75,1250,-750 ).normalize();  
-		scene.add( light );
-
-		//SHADOW
-		var spotLight	= new THREE.DirectionalLight( 0x888888 );
-		spotLight.position.set( 150,1500,-800 );
-		spotLight.shadowCameraNear	= 0.01;	
-
-		spotLight.shadowCameraLeft = -3000;
-		spotLight.shadowCameraRight = 3000;
-		spotLight.shadowCameraTop = 3500;
-		spotLight.shadowCameraBottom = -3000;
-
-		spotLight.castShadow		= true;
-		spotLight.shadowDarkness	= 0.5;
-		// spotLight.shadowCameraVisible	= true;
-		// console.dir(spotLight)
-		spotLight.shadowMapWidth	= 4096;
-		spotLight.shadowMapHeight	= 4096;
-		scene.add( spotLight );	
-		
-		// FLOOR
-		var floorTexture = new THREE.ImageUtils.loadTexture( 'images/grass14.png' );
-		floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
-		floorTexture.repeat.set( 10, 10 );
-		var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
-		var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
-		var floor = new THREE.Mesh(floorGeometry, floorMaterial);
-		floor.position.y = -0.5;
-		floor.rotation.x = Math.PI / 2;
-		///scene.add(floor);
-
-		floor.castShadow	= false;
-		floor.receiveShadow	= true;
-		
-		// SKYBOX/FOG	
-		var imagePrefix = "images/skybox_";
-		var directions  = ["right", "left", "top", "bottom", "front", "back"];
-		var imageSuffix = ".jpg";
-		
-		var materialArray = [];
-		var material;
-		for (var i = 0; i < 6; i++){
-			material = new THREE.MeshBasicMaterial({
-				map: THREE.ImageUtils.loadTexture( imagePrefix + directions[i] + imageSuffix ),
-				side: THREE.BackSide
-			});
-			materialArray.push(material);
-		}
-
-		var skyBoxMaterial = new THREE.MeshFaceMaterial( materialArray );
-
-		var fog_color = 0x9999ff; 
-		var alpha = 0.00025;
-		var skyBoxGeometry = new THREE.CubeGeometry( 2500, 2500, 2500 );
-		// var skyBoxMaterial = new THREE.MeshBasicMaterial( { map: fog_color, side: THREE.BackSide } );
-		var skyBox = new THREE.Mesh( skyBoxGeometry, skyBoxMaterial );
-
-		scene.add(skyBox);
-		
-		skyBox.castShadow = false
-		skyBox.receiveShadow = true;
-		//scene.fog = new THREE.FogExp2( fog_color, 0.0001 );
-		
-		////////////
-		// CUSTOM //
-		////////////
-		
-		// create an array with six textures for a cool cube
-		var materialArray = [];
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/right.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/left.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/top.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/bot.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/back.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/front.png' ) }));
-		var Strawberry1Mat = new THREE.MeshFaceMaterial(materialArray);
-		var Strawberry1Geom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
-		Strawberry1 = new THREE.Mesh( Strawberry1Geom, Strawberry1Mat );
-		Strawberry1.position.set(0, 30.1, 0);
-		scene.add( Strawberry1 );
-
-		Strawberry1.castShadow = true;
-		Strawberry1.receiveShadow = false;	
-
-
-		var materialArray = [];
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_right.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_left.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_top.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_bot.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_back.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/s_front.png' ) }));
-		var Strawberry2Mat = new THREE.MeshFaceMaterial(materialArray);
-		var Strawberry2Geom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
-		Strawberry2 = new THREE.Mesh( Strawberry2Geom, Strawberry2Mat );
-		Strawberry2.position.set(150, 30.1, 0);
-		scene.add( Strawberry2 );
-
-		Strawberry2.castShadow = true;
-		Strawberry2.receiveShadow = false;	
-		
-
-
-		var materialArray = [];
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_right.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_left.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_top.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_bot.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_back.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/g_front.png' ) }));
-		var AppleGMat = new THREE.MeshFaceMaterial(materialArray);
-		var AppleGGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
-		AppleG = new THREE.Mesh( AppleGGeom, AppleGMat );
-		AppleG.position.set(-150, 30.1, 0);
-		scene.add( AppleG );
-
-		AppleG.castShadow = true;
-		AppleG.receiveShadow = false;	
-
-
-
-
-		var materialArray = [];
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_right.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_left.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_top.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_bot.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_back.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/w_front.png' ) }));
-		var WatermelonMat = new THREE.MeshFaceMaterial(materialArray);
-		var WatermelonGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
-		Watermelon = new THREE.Mesh( WatermelonGeom, WatermelonMat );
-		Watermelon.position.set(-300, 30.1, 0);
-		scene.add( Watermelon );
-
-		Watermelon.castShadow = true;
-		Watermelon.receiveShadow = false;	
-
-
-		var materialArray = [];
-		materialArray.push(new THREE.MeshPhongMaterial( { color: 0xffff00 }));
-		materialArray.push(new THREE.MeshPhongMaterial( { color: 0x00ff00 }));
-		materialArray.push(new THREE.MeshPhongMaterial( { color: 0x0000ff }));
-		materialArray.push(new THREE.MeshPhongMaterial( { color: 0x00ffff }));
-		materialArray.push(new THREE.MeshPhongMaterial( { color: 0xff00ff }));
-		materialArray.push(new THREE.MeshPhongMaterial( { color: 0xff0000 }));
-		var ColoredCubeMat = new THREE.MeshFaceMaterial(materialArray);
-		var ColoredCubeGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
-		ColoredCube = new THREE.Mesh( ColoredCubeGeom, ColoredCubeMat );
-		ColoredCube.position.set(300, 30.1, 0);
-		scene.add( ColoredCube );
-
-		ColoredCube.castShadow = true;
-		ColoredCube.receiveShadow = false;	
-
-
-		var materialArray = [];
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/3_right.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/1_left.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/6_top.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/5_bot.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/4_back.png' ) }));
-		materialArray.push(new THREE.MeshPhongMaterial( { map: THREE.ImageUtils.loadTexture( 'images/2_front.png' ) }));
-		var DiceMat = new THREE.MeshFaceMaterial(materialArray);
-		var DiceGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
-		Dice = new THREE.Mesh( DiceGeom, DiceMat );
-		Dice.position.set(-450, 30.1, 0);
-		scene.add( Dice );
-
-		Dice.castShadow = true;
-		Dice.receiveShadow = false;	
-		
 	}
 
 	function onDocumentMouseMove( event ) {
@@ -335,9 +760,9 @@
 	function animate() 
 	{
 		requestAnimationFrame( animate );
+		update();
 		render();
 		stats.end();		
-		update();
 	}
 
 	function update()
@@ -345,6 +770,7 @@
 		var delta = clock.getDelta(); // seconds.
 		var moveDistance = 200 * delta; // 200 pixels per second
 		var rotateAngle = Math.PI / 2 * delta;   // pi/2 radians (90 degrees) per second
+		var time = clock.getElapsedTime() * 0.5;
 		
 		// local coordinates
 		// local transformations
@@ -380,6 +806,7 @@
 		
 		if ( keyboard.pressed("Z") )
 		{
+
 			Strawberry1.position.set(0,30.1,0);
 			Strawberry1.rotation.set(0,0,0);
 
@@ -392,27 +819,30 @@
 			Watermelon.position.set(-300, 30.1, 0);
 			Watermelon.rotation.set(0,0,0);
 
-			ColoredCube.position.set(300, 30.1, 0);
-			ColoredCube.rotation.set(0,0,0);
-
-			Dice.position.set(-450, 30.1, 0);
-			Dice.rotation.set(0,0,0);
-
 		}
 			
 		// global coordinates
-		if ( keyboard.pressed("left") ){
-			Strawberry1.position.x -= moveDistance;
-		}
-		if ( keyboard.pressed("right") ){
+		if ( keyboard.pressed("J") ){
 			Strawberry1.position.x += moveDistance;
 		}
-		if ( keyboard.pressed("up") ){
-			Strawberry1.position.z -= moveDistance;
+		if ( keyboard.pressed("L") ){
+			Strawberry1.position.x -= moveDistance;
 		}
-		if ( keyboard.pressed("down") ){
+		if ( keyboard.pressed("I") ){
 			Strawberry1.position.z += moveDistance;
 		}
+		if ( keyboard.pressed("K") ){
+			Strawberry1.position.z -= moveDistance;
+		}
+
+		if ( keyboard.pressed("C") ){
+			Strawberry1.position.y -= moveDistance;
+		}
+		if ( keyboard.pressed("V") ){
+			Strawberry1.position.y += moveDistance;
+		}
+
+		
 			
 		controls.update();
 		stats.update();
@@ -420,6 +850,7 @@
 
 	function render() 
 	{
+		var color;
 		for ( var i = 0, il = birds.length; i < il; i++ ) {
 			boid = boids[ i ];
 			boid.run( boids );
@@ -440,26 +871,28 @@
 		// rotate the cube around its axes
 		Strawberry1.rotation.y += 0.02;
 		Strawberry2.rotation.y += 0.02;
+		st2Clone.rotation.y += 0.02;
 		AppleG.rotation.y += 0.02;
+		aClone.rotation.y += 0.02;
 		Watermelon.rotation.y += 0.02;
 
 		ColoredCube.rotation.y += 0.02;
 		ColoredCube.rotation.z += 0.01;
 		ColoredCube.rotation.x += 0.03;
 		 
-		Dice.rotation.y += 0.02;
+		Dice.rotation.y += 0.03;
 		Dice.rotation.z += 0.01;
-		Dice.rotation.x += 0.03;
+		Dice.rotation.x += 0.02;
 
+		Direction.rotation.y -= 0.02;
+		Direction.rotation.z -= 0.01;
+		Direction.rotation.x -= 0.03;
 
-
-		// AppleG.translateY( 10 );
-
+		Crate.rotation.y -= 0.03;
+		Crate.rotation.z -= 0.01;
+		Crate.rotation.x -= 0.02;
 
 		renderer.render( scene, camera );
-
-		
-		
 		
 	}
 
