@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -16,7 +15,7 @@
 		</audio>
 	</div>
 
-	<script src="js/three.js"></script>
+	<script src="js/Three.js"></script>
 	<script src="js/Projector.js"></script>
 	<script src="js/CanvasRenderer.js"></script>
 	<script src="js/Detector.js"></script>
@@ -371,6 +370,22 @@
 
 		//////////////////////////
 		// Crate
+		//////////////////////////
+		var materialArray = [];
+		for(var i=0; i<6; i++){
+			materialArray.push(new THREE.MeshPhongMaterial( { map: tl.load( 'images/crate_0.png' ) }));
+		}
+		var CrateMat = new THREE.MeshFaceMaterial(materialArray);
+		var CrateGeom = new THREE.CubeGeometry( 75, 75, 75, 1, 1, 1, materialArray );
+		Crate = new THREE.Mesh( CrateGeom, CrateMat );
+		Crate.position.set(-100, floor+125, -0);
+		scene.add( Crate );
+		Crate.castShadow = true;
+		Crate.receiveShadow = true;	
+
+
+		//////////////////////////
+		// Beatles 1
 		//////////////////////////
 		var materialArray = [];
 		for(var i=0; i<6; i++){
@@ -778,72 +793,111 @@
 		// move forwards/backwards/left/right
 		if ( keyboard.pressed("W") ){
 			Strawberry1.translateZ( -moveDistance );
+			Strawberry2.translateZ( -moveDistance );
+			AppleG.translateZ( -moveDistance );
+			Watermelon.translateZ( -moveDistance );
 		}
 		if ( keyboard.pressed("S") ){
 			Strawberry1.translateZ(  moveDistance );
+			Strawberry2.translateZ(  moveDistance );
+			AppleG.translateZ(  moveDistance );
+			Watermelon.translateZ( moveDistance );
 		}
 		if ( keyboard.pressed("Q") ){
 			Strawberry1.translateX( -moveDistance );
+			Strawberry2.translateX( -moveDistance );
+			AppleG.translateX( -moveDistance );
+			Watermelon.translateX( -moveDistance );
 		}
 		if ( keyboard.pressed("E") ){
-			Strawberry1.translateX(  moveDistance );	
+			Strawberry1.translateX(  moveDistance );
+			Strawberry2.translateX(  moveDistance );
+			AppleG.translateX( moveDistance );
+			Watermelon.translateX( moveDistance );
 		}
 
 		// rotate left/right/up/down
 		var rotation_matrix = new THREE.Matrix4().identity();
 		if ( keyboard.pressed("A") ){
 			Strawberry1.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+			Strawberry2.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+			AppleG.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+			Watermelon.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
 		}
 		if ( keyboard.pressed("D") ){
 			Strawberry1.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+			Strawberry2.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+			AppleG.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+			Watermelon.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
 		}
 		if ( keyboard.pressed("R") ){
 			Strawberry1.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+			Strawberry2.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+			AppleG.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+			Watermelon.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
 		}
 		if ( keyboard.pressed("F") ){
 			Strawberry1.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+			Strawberry2.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+			AppleG.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+			Watermelon.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
 		}
 		
-		if ( keyboard.pressed("Z") )
-		{
+		// if ( keyboard.pressed("Z") )
+		// {
 
-			Strawberry1.position.set(0,30.1,0);
-			Strawberry1.rotation.set(0,0,0);
+		// 	Strawberry1.position.set(0,30.1,0);
+		// 	Strawberry1.rotation.set(0,0,0);
 
-			Strawberry2.position.set(150, 30.1, 0);
-			Strawberry2.rotation.set(0,0,0);
+		// 	Strawberry2.position.set(150, 30.1, 0);
+		// 	Strawberry2.rotation.set(0,0,0);
 
-			AppleG.position.set(-150, 30.1, 0);
-			AppleG.rotation.set(0,0,0);
+		// 	AppleG.position.set(-150, 30.1, 0);
+		// 	AppleG.rotation.set(0,0,0);
 
-			Watermelon.position.set(-300, 30.1, 0);
-			Watermelon.rotation.set(0,0,0);
+		// 	Watermelon.position.set(-300, 30.1, 0);
+		// 	Watermelon.rotation.set(0,0,0);
 
-		}
+		// }
 			
 		// global coordinates
 		if ( keyboard.pressed("J") ){
-			Strawberry1.position.x += moveDistance;
+			Strawberry2.position.x += moveDistance;
+			Strawberry1.position.x -= moveDistance;
+			AppleG.position.x += moveDistance;
+			Watermelon.position.x -= moveDistance;
 		}
 		if ( keyboard.pressed("L") ){
-			Strawberry1.position.x -= moveDistance;
+			Strawberry2.position.x -= moveDistance;
+			Strawberry1.position.x += moveDistance;
+			AppleG.position.x -= moveDistance;
+			Watermelon.position.x += moveDistance;
 		}
 		if ( keyboard.pressed("I") ){
-			Strawberry1.position.z += moveDistance;
+			Strawberry2.position.z += moveDistance;
+			Strawberry1.position.z -= moveDistance;
+			AppleG.position.z += moveDistance;
+			Watermelon.position.z -= moveDistance;
 		}
 		if ( keyboard.pressed("K") ){
-			Strawberry1.position.z -= moveDistance;
+			Strawberry2.position.z -= moveDistance;
+			Strawberry1.position.z += moveDistance;
+			AppleG.position.z -= moveDistance;
+			Watermelon.position.z += moveDistance;
 		}
-
-		if ( keyboard.pressed("C") ){
-			Strawberry1.position.y -= moveDistance;
-		}
-		if ( keyboard.pressed("V") ){
+		if ( keyboard.pressed("U") ){
+			Strawberry2.position.y -= moveDistance;
 			Strawberry1.position.y += moveDistance;
+			AppleG.position.y -= moveDistance;
+			Watermelon.position.y += moveDistance;
+		}
+		if ( keyboard.pressed("O") ){
+			Strawberry2.position.y += moveDistance;
+			Strawberry1.position.y -= moveDistance;
+			AppleG.position.y += moveDistance;
+			Watermelon.position.y -= moveDistance;
 		}
 
-		
-			
 		controls.update();
 		stats.update();
 	}
